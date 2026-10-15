@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lead Scoring · Mund-Tönjes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f3;--card:#fff;--ink:#1d2a30;--mut:#66747b;--line:#d9e0dd;--acc:#3f8a55;--hi:#cfe8d3;--md:#f6e3a1;--lo:#f1c6c6;--bad:#b3261e;--bar:#e6ece8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151b1e;--card:#1e282d;--ink:#e7eeea;--mut:#98a6ad;--line:#34444c;--acc:#6dbb82;--hi:#2b4a35;--md:#51471f;--lo:#5a2c2c;--bad:#ff8a80;--bar:#2b383e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151b1e;--card:#1e282d;--ink:#e7eeea;--mut:#98a6ad;--line:#34444c;--acc:#6dbb82;--hi:#2b4a35;--md:#51471f;--lo:#5a2c2c;--bad:#ff8a80;--bar:#2b383e;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;font-variant-numeric:tabular-nums}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:10px 20px;background:#1d2729;color:#fff}
+header h1{font-size:17px;margin:0;font-weight:600}
+header small{color:#9fb2ab}header img{height:40px;display:block}.chk{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:13px;color:var(--ink)}.chk input{width:auto;margin-top:2px}.sec{font-size:12px;font-weight:600;margin:16px 0 2px;color:var(--acc)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px;font:inherit;color:var(--mut);cursor:pointer}
+nav button.on{color:var(--ink);border-color:var(--acc);font-weight:600}
+main{padding:18px 20px;max-width:1500px;margin:auto}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+h2{font-size:14px;margin:0 0 10px;font-weight:600}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+textarea{resize:vertical;min-height:70px}
+.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:6px;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.sm{padding:3px 8px;font-size:12px}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th{text-align:left;font-size:12px;color:var(--mut);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.lead{cursor:pointer}tr.lead:hover td{background:var(--bar)}tr.sel td{background:var(--bar)}
+.pb{display:flex;align-items:center;gap:8px;min-width:120px}
+.pb i{flex:1;height:8px;background:var(--bar);border-radius:4px;overflow:hidden}
+.pb i b{display:block;height:100%;background:var(--acc)}
+.pb span{width:38px;text-align:right;font-weight:600}
+.tag{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:500}
+.Alto{background:var(--hi)}.Médio{background:var(--md)}.Baixo{background:var(--lo)}
+.warn{color:var(--bad);font-size:12px}
+.mut{color:var(--mut)}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0}
+.parts div{background:var(--bg);border-radius:6px;padding:6px 8px;font-size:12px}
+.parts b{display:block;font-size:15px}
+.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px}
+.empty{padding:28px;text-align:center;color:var(--mut)}
+</style>
+</head>
+<body>
+<header><div style="display:flex;align-items:center;gap:16px"><img id="logo" alt="Mund-Tönjes" src="/_blob/f7ea709cabdea361d75dae03593cb4bd"><div><h1>Lead Scoring</h1><small id="stat"></small></div></div>
+<div class="row" style="margin:0"><button class="btn sm" id="bCsv">Exportar CSV</button><button class="btn sm" id="bJson">Backup JSON</button><button class="btn sm" id="bImp">Importar CSV ou JSON</button><input type="file" id="fImp" accept=".json,.csv" hidden><span id="sv" class="mut" style="align-self:center;font-size:12px"></span></div></header>
+<nav id="tabs"><button data-t="leads" class="on">Leads</button><button data-t="learn">Aprendizado</button><button data-t="cfg">Pesos e regras</button></nav>
+<main>
+<section id="p-leads"><div class="grid">
+<div class="card"><h2 id="fTitle">Novo lead</h2>
+<label>Categoria (palavra-chave buscada)</label><select id="fCat"></select>
+<label>Nome da empresa</label><input id="fCo">
+<label>Valor estimado de mercado (valor total) e moeda</label><div class="row" style="margin:0"><input id="fVal" type="text" inputmode="decimal" placeholder="ex.: 22.300.000,00" oninput="mask(event)" style="flex:1"><select id="fCur" style="width:92px"><option value="">Moeda</option><option>USD</option><option>EUR</option><option>GBP</option><option>BRL</option></select></div><div class="mut" id="vHint" style="font-size:12px;min-height:16px"></div>
+<label>Nome do decisor</label><input id="fName">
+<label>Cargo do decisor</label><input id="fRole" placeholder="ex.: COO, Head of Finance">
+<label>Localização (país, estado ou cidade)</label><input id="fLoc" placeholder="ex.: Londres, Texas, Bélgica">
+<label>Gancho: fato público específico (vira a 1ª frase)</label><input id="fHook" placeholder="ex.: fusão Confex + Fairway em 2025"><div class="sec">Perfil da empresa</div>
+<label>Setor</label><select id="fSec"><option value="">Escolha...</option><option value="served">Já atendido: FMCG, print, automotivo, eletrônicos, joalheria, segurança</option><option value="adj">Fabricação ou distribuição adjacente</option><option value="other">Outro</option></select>
+<label>Funcionários</label><select id="fEmp"><option value="">Não sei</option><option>11-50</option><option>51-200</option><option>201-500</option><option>501-1000</option><option>1000+</option></select>
+<label>Propriedade</label><select id="fOwn"><option value="">Não sei</option><option>Privada</option><option>Investidor</option><option>Subsidiária</option><option>Listada em bolsa</option></select>
+<label>Time de BI interno</label><select id="fBi"><option value="">Não sei</option><option>Nenhum</option><option>Pequeno</option><option>Grande</option></select>
+<label class="chk" style="margin-top:10px"><input type="checkbox" id="fVer">Faturamento verificado em registro oficial (sem verificar, o valor pesa 75%)</label>
+<div class="sec">Gatilhos (sinais públicos)</div><div id="fSig"></div>
+<label>Data do gatilho</label><input id="fSd" type="date"><label>Fonte do gatilho</label><input id="fSu" placeholder="URL do post, vaga ou notícia">
+<div class="sec">Desqualificadores</div><div id="fDq"></div>
+<label>LinkedIn do decisor (URL)</label><input id="fLi" placeholder="https://www.linkedin.com/in/...">
+<div class="row"><button class="btn pri" id="bSave">Salvar lead</button><button class="btn" id="bClr">Limpar</button></div>
+<div id="live" style="margin-top:12px"></div></div>
+<div><div class="card" id="tri" style="margin-bottom:14px" hidden><h2>Triagem por print do LinkedIn</h2><p class="mut" style="margin:0 0 8px">Envie o print de uma busca de empresas. O Claude lê os nomes e separa o que parece ICP. Aqui ele não pesquisa a web: porte, faturamento, decisor e gatilhos você completa depois.</p><div class="row" style="margin:0"><input type="file" id="tFile" accept="image/*" style="width:auto"><input id="tKw" placeholder="Palavra-chave buscada (ex.: wholesale)" style="width:230px"><button class="btn pri" id="tGo">Ler print</button></div><div id="tOut"></div></div><div class="row" style="margin:0 0 8px;align-items:center"><label style="margin:0">Ordenar por</label><select id="sortBy" style="width:auto" onchange="renderRows()"><option value="old">Ordem de cadastro</option><option value="p">Maior probabilidade</option><option value="new">Mais recentes primeiro</option><option value="co">Empresa A-Z</option></select></div><div class="card tw"><table><thead><tr><th>#</th><th>Probabilidade</th><th>Classe</th><th>Empresa</th><th>Categoria</th><th>Valor</th><th>Decisor</th><th>Cargo</th><th>País</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="detail" class="card" style="margin-top:14px" hidden></div></div></div></section>
+<section id="p-learn" hidden></section>
+<section id="p-cfg" hidden></section>
+</main>
+<script>
+"use strict";
+const CATS=[
+["manufacturer","Setor",.8,"Do the production plan, the stock and the sales numbers at {Company} live in one version, or in three different files?"],
+["distributor","Setor",1,"How clear is it at {Company} which customers and products really make money once rebates and returns are in?"],
+["wholesale","Setor",.9,"When the same product sits under different codes or prices across sites, how do you see the real margin of one customer?"],
+["food and beverage","Setor",.8,"With seasonality and shelf life, how do you decide what to produce or order ahead of a peak?"],
+["FMCG","Setor",1,"When targets are reviewed at {Company}, does every region work from the same numbers, or does each report its own version?"],
+["chemicals","Setor",.6,"In chemicals, price and margin by customer are hard to see when product codes differ across entities. Is that a question at {Company}?"],
+["building materials","Setor",.6,"How soon after month-end do you see margin and stock by branch?"],
+["industrial equipment","Setor",.6,"Who owns the single demand number that both sales and operations plan from at {Company}?"],
+["packaging","Setor",.6,"Can you see today what a given customer pays for a quote against everyone else, across quantity tiers?"],
+["print","Setor",.9,"Can you benchmark quote prices consistently across customers and entities at {Company}?"],
+["Business Central","Tecnologia",1,"How much of what leadership sees today comes straight from Business Central, and how much is still assembled by hand?"],
+["Dynamics 365","Tecnologia",1,"Which number would you most like leadership to see straight from Dynamics 365, without a spreadsheet in between?"],
+["Dynamics NAV","Tecnologia",.9,"How are your management reports built from NAV today, and who maintains them?"],
+["Power BI","Tecnologia",.8,"How much of what leadership sees in Power BI comes straight from the source, and how much from hand-built files?"],
+["Excel","Tecnologia",.6,"How many people touch the spreadsheet before the monthly numbers go to leadership?"],
+["Fabric","Tecnologia",.8,"Is Microsoft Fabric on the roadmap at {Company}, and if so, what would you want in first?"],
+["month-end reporting","Dor",.8,"How many days after month-end do leaders at {Company} see a number they trust?"],
+["manual reporting","Dor",.9,"What share of the monthly pack is still assembled by hand, and by whom?"],
+["forecast accuracy","Dor",.9,"How do you measure forecast accuracy today, and where does it break most: a product line, a season, a customer?"],
+["stockouts","Dor",.8,"When a stockout happens, how early could the data have shown it?"],
+["overstock","Dor",.8,"Is slow-moving stock reviewed weekly at {Company}, or does it become visible only after it is built?"],
+["margin","Dor",.7,"Where does {Company} lose margin that the monthly reports only show after the fact: discounts, credit notes, returns?"],
+["KPI","Dor",.5,"Which three KPIs does leadership actually decide on, and does everyone calculate them the same way?"],
+["single source of truth","Dor",.8,"Do sales, finance and operations at {Company} work from the same version of the key numbers?"],
+["consolidation","Dor",.8,"How long does group consolidation take each month, and how much of it is manual?"],
+["multi-entity","Dor",1,"With several entities, can you see one customer or one product across all of them in a single view?"],
+["Finance Director","Cargo",.7,"Does more time go into building the monthly pack than into explaining it?"],
+["Financial Controller","Cargo",.7,"How do you reconcile the management numbers back to the ledger today?"],
+["COO","Cargo",.7,"When plan and reality drift apart, where does operations lose the most time, and how early do you see it?"],
+["Supply Chain Director","Cargo",.7,"Stock cover against forward demand, open POs in transit, service level: which of these can you see in one place today?"],
+["Commercial Director","Cargo",.7,"How do you tell which customers, products or initiatives drive margin and not just sales?"],
+["Marketing Director","Cargo",.7,"How do you currently connect marketing spend to sales outcomes?"]];
+const NOTES={Setor:"Hi {FirstName}, I work with Mund-Tönjes, a BI consultancy for manufacturers and distributors. Would be good to connect and swap notes on reporting at {Company}.",
+Tecnologia:"Hi {FirstName}, I work with Mund-Tönjes on BI for companies on the Microsoft stack. Would be good to connect and compare notes.",
+Dor:"Hi {FirstName}, I talk with finance and operations leaders about getting trusted numbers faster. Happy to connect and swap notes.",
+Cargo:"Hi {FirstName}, I speak with leaders at manufacturers and distributors about how reporting supports decisions. Would you connect?"};
+const INTRO_HI="Thanks for connecting, {FirstName}. For context, we build decision-ready reporting for mid-sized manufacturers and distributors, mostly on Power BI and Dynamics 365 or Business Central. One question, no pitch: ";
+const INTRO_MD="Thanks for connecting, {FirstName}. ";
+const DEF_Q="How much of your monthly reporting is still assembled by hand?";
+const SIGS=[
+["ask","Pediu parceiro de BI ou D365 publicamente (lead quente)",.8,"What is the report or number you most need to trust once this is in place?","Hi {FirstName}, saw your post about finding a BI partner. I work with Mund-Tönjes on exactly this for manufacturers and distributors. Happy to connect."],
+["bc","Go-live ou migração recente de D365 ou Business Central",.6,"Which reports from the previous system are you still rebuilding after the go-live?","Hi {FirstName}, congratulations on the new ERP at {Company}. I work with finance and ops teams on the reporting that comes after a go-live. Happy to connect."],
+["multi","Várias entidades, países ou matriz",.35,"With several entities, can you see one customer or one product across all of them in a single view?","Hi {FirstName}, I speak with finance and operations leaders at companies running several entities. Keen to compare notes on keeping one version of the numbers. Would you connect?"],
+["bi","Power BI ou Fabric em implantação",.3,"How much of what leadership sees in Power BI comes straight from the source, and how much from hand-built files?",null],
+["acq","Aquisição ou novo grupo controlador",.3,"How different are the definitions (revenue, margin, product codes) between {Company} and the group standard?","Hi {FirstName}, I work with companies adjusting reporting to a new group. Keen to connect."],
+["crm","Troca de CRM",.3,"What are you most worried will break in your sales reporting when the data moves?","Hi {FirstName}, I work with commercial teams whose reporting has to survive a CRM change. Would be good to connect."],
+["job","Vaga aberta de planner, pricing, marketing ou BI analyst",.3,"When that person starts, what is the first report or forecast you want them to own?","Hi {FirstName}, saw {Company} is hiring in analytics and planning. I work with teams building that capability. Happy to connect."],
+["pain","Dor pública: relatório manual, planilha, meta perdida",.3,"When the monthly numbers go to leadership, roughly how many hands touch the spreadsheet before they are final?","Hi {FirstName}, I talk with finance and operations leaders about getting off spreadsheet-built reporting. Would be good to connect."],
+["site","Nova planta, centro de distribuição ou contrato de exportação",.25,"How will stock and service level be seen across the old and new sites?","Hi {FirstName}, congratulations on the new site at {Company}. I work with operations teams on stock and demand visibility. Happy to connect."],
+["old","Já usa Microsoft (D365, BC ou NAV), sem data recente",.25,"How are your management reports built from the ERP today, and who maintains them?",null]];
+const DQ=[["proc","Procurement formal ou onboarding de fornecedor"],["scope","Precisa só de contabilidade, CRM ou treinamento"],["chart","Quer só um gráfico pontual"]];
+const SENIOR=[["ceo",1],["founder",1],["owner",1],["managing director",1],["president",1],["coo",1],["cfo",1],["cmo",1],["chief",1],["general manager",.9],["head",.9],["vp",.9],["vice president",.9],["director",.9],["controller",.7],["manager",.5]];
+const JUNIOR=[["analyst",.15],["coordinator",.15],["specialist",.15],["assistant",.15],["intern",.15],["trainee",.15],["associate",.15],["clerk",.15],["administrator",.15],["recruiter",.15],["student",.15],["product owner",.3],["process owner",.3]];
+const nz=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const G=(s,f)=>s.split("|").map(a=>[nz(a),f]);
+const GEO=[...G("usa|us|u.s.|u.s.a.|united states|estados unidos|eua|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|nova york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|chicago|houston|dallas|los angeles|san francisco|boston|atlanta|miami|seattle|philadelphia|denver|detroit|austin|minneapolis|cleveland|pittsburgh|phoenix|charlotte|nashville|columbus|milwaukee",1),
+...G("uk|u.k.|united kingdom|reino unido|great britain|england|inglaterra|scotland|escocia|wales|pais de gales|northern ireland|london|londres|manchester|birmingham|leeds|glasgow|edinburgh|edimburgo|liverpool|bristol|sheffield|nottingham|belgium|belgica|brussels|bruxelas|antwerp|antuerpia|ghent|gent|leuven|liege|netherlands|holland|holanda|paises baixos|amsterdam|amsterda|rotterdam|utrecht|eindhoven|the hague|den haag|germany|alemanha|deutschland|berlin|berlim|munich|munique|frankfurt|hamburg|hamburgo|stuttgart|cologne|colonia|dusseldorf|france|franca|paris|lyon|marseille|toulouse|lille",1),
+...G("ireland|irlanda|dublin|luxembourg|luxemburgo|spain|espanha|madrid|barcelona|valencia|portugal|lisbon|lisboa|italy|italia|milan|milao|rome|roma|turin|torino|switzerland|suica|zurich|zurique|geneva|genebra|austria|vienna|viena|denmark|dinamarca|copenhagen|copenhague|sweden|suecia|stockholm|estocolmo|norway|noruega|oslo|finland|finlandia|helsinki|poland|polonia|warsaw|varsovia|czechia|czech republic|republica tcheca|tchequia|prague|praga|hungary|hungria|budapest|romania|romenia|bulgaria|croatia|croacia|slovakia|eslovaquia|slovenia|eslovenia|estonia|latvia|letonia|lithuania|lituania|greece|grecia|athens|atenas|iceland|islandia|malta|cyprus|chipre|serbia|bosnia|albania|montenegro|north macedonia|macedonia|moldova|moldavia|ukraine|ucrania|belarus|bielorrussia|kosovo|monaco|liechtenstein|europe|europa",.85)];
+const OUT="brazil|brasil|canada|mexico|argentina|chile|colombia|peru|china|india|japan|japao|korea|coreia|singapore|singapura|australia|new zealand|nova zelandia|south africa|africa do sul|morocco|marrocos|egypt|egito|nigeria|kenya|quenia|uae|emirates|emirados|dubai|saudi arabia|arabia saudita|israel|turkey|turquia|russia|vietnam|indonesia|thailand|tailandia|malaysia|malasia|philippines|filipinas|taiwan|hong kong|pakistan".split("|");
+const STC=/,\s*(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\s*$/;
+function geo(loc){if(!loc)return{f:0,out:false,known:false};const n=" "+nz(loc).replace(/[^a-z.\s]/g," ")+" ";let f=GEO.reduce((a,[k,v])=>n.includes(" "+k+" ")?Math.max(a,v):a,0);if(!f&&STC.test(loc.trim()))f=1;const out=!f&&OUT.some(k=>n.includes(" "+k+" "));return{f,out,known:f>0||out}}
+const BANDS=[[0,.05],[2,.2],[10,.5],[15,.7],[20,1],[50,1],[100,.6],[250,.3]];
+const STATUS=["Não contatado","Conexão enviada","Aceitou conexão","Respondeu","Reunião marcada","Proposta enviada","Ganho","Descartado"];
+const STAGE=[0,1,2,3,4,5,6,0];const EM={"11-50":30,"51-200":125,"201-500":350,"501-1000":750,"1000+":1500};
+const NOUN={manufacturer:"manufacturers",distributor:"distributors",wholesale:"wholesalers",FMCG:"FMCG companies","food and beverage":"food and beverage companies",chemicals:"chemical companies","building materials":"building materials companies","industrial equipment":"industrial equipment makers",packaging:"packaging companies",print:"print companies"};
+const PERS=[["fin",/financ|cfo|controller|account/i,"From the finance seat, "],["ops",/operat|coo|supply|logist|plan|procure|purchas/i,"From an operations view, "],["com",/sales|commerc|revenue|market|cmo|brand|growth/i,"On the commercial side, "],["it",/\bit\b|cio|cto|data|technolog|digital/i,"From a data and systems view, "],["exec",/ceo|president|owner|founder|managing director|general manager|chief executive/i,"At leadership level, "]];
+const WLAB={cat:"Categoria",val:"Valor estimado",name:"Nome do decisor",role:"Cargo do decisor",loc:"Localização",co:"Nome da empresa",sig:"Gatilho (sinal público)",sec:"Setor atendido",emp:"Funcionários"};
+const defCfg=()=>({v:2,dqMult:.35,fx:{EUR:1,USD:.87,GBP:1.17,BRL:.175},valConf:.75,w:{cat:10,val:18,name:20,role:14,loc:8,co:2,sig:18,sec:6,emp:4},nameBlank:.1,noName:.75,smallBelow:10,smallMult:.5,geoMult:.5,mid:75,slope:7,hi:85,med:65,catF:Object.fromEntries(CATS.map(c=>[c[0],c[2]]))});
+let S={leads:[],cfg:defCfg()},sel=null,edit=null,tab="leads";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const re=k=>new RegExp("\\b"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+const best=(list,t)=>list.reduce((m,[k,f])=>re(k).test(t)?Math.max(m,f):m,0);
+
+function score(l){
+ const c=S.cfg,w=c.w,v=l.value===""||l.value==null||isNaN(Number(l.value))?null:Number(l.value)/1e6,name=(l.name||"").trim(),role=(l.role||"").trim(),loc=(l.loc||"").trim();
+ const catRow=CATS.find(x=>x[0]===l.cat);
+ const fCat=!l.cat?0:(c.catF[l.cat]??.3);
+ const vE=(v!=null&&!isNaN(v))?v*(c.fx[l.cur]||1):null;let fVal=0;if(vE!=null&&vE>=0){for(const b of BANDS)if(vE>=b[0])fVal=b[1];if(!l.ver)fVal*=c.valConf}
+ const fName=name?1:c.nameBlank;
+ let fRole=0;if(role){const j=best(JUNIOR,role),s=best(SENIOR,role);fRole=j>0?j:(s>0?s:.3);}
+ const g=geo(loc),m=g.f;
+ const fLoc=!loc?0:(m||(g.out?0.1:0.3)),fCo=(l.company||"").trim()?1:0;
+ const gSmall=(vE!=null&&vE<c.smallBelow)?c.smallMult:1,gGeo=(loc&&g.out)?c.geoMult:1,gName=name?1:c.noName;
+ const sigs=l.sigs||[],sr=SIGS.filter(s=>sigs.includes(s[0])).reduce((a,s)=>a+s[2],0);let rec=.7;if(l.sigDate){const mo=(Date.now()-new Date(l.sigDate))/2.6e9;rec=mo<=6?1:mo<=12?.8:mo<=24?.5:.2}
+ const fSig=sigs.length?Math.min(1,sr)*rec:0,fSec={served:1,adj:.7,other:.3}[l.sec]??0,fEmp={"11-50":.4,"51-200":1,"201-500":1,"501-1000":.6,"1000+":.2}[l.emp]??.5;
+ const dq=(l.dqs||[]).length+(l.own==="Listada em bolsa"?1:0)+(l.bi==="Grande"?1:0),gDq=Math.pow(c.dqMult,dq);
+ const raw=w.cat*fCat+w.val*fVal+w.name*fName+w.role*fRole+w.loc*fLoc+w.co*fCo+w.sig*fSig+w.sec*fSec+w.emp*fEmp;
+ const sc=Math.round(raw*gSmall*gGeo*gName*gDq*10)/10,P=1/(1+Math.exp(-(sc-c.mid)/c.slope));
+ const cls=sc>=c.hi?"Alto":sc>=c.med?"Médio":"Baixo";
+ const f=[];
+ if(!name)f.push("SEM DECISOR: ache o nome antes de enviar");
+ if(!role)f.push("Sem cargo");else if(fRole<=.15)f.push("Cargo júnior");
+ if(vE==null)f.push("Sem valor");else{if(!l.cur)f.push("Escolha a moeda do valor (assumi EUR)");if(vE<20)f.push("Abaixo de 20M");else if(vE>100)f.push("Acima de 100M: checar time de BI");if(EM[l.emp]){const rpe=vE*1.15e6/EM[l.emp];if(rpe<1e5||rpe>2e6)f.push("Faturamento e funcionários parecem incoerentes: confira a fonte")}}
+ if(vE==null&&EM[l.emp])f.push("Ref.: "+l.emp+" funcionários sugerem ~"+Math.round(EM[l.emp]*.15)+" a "+Math.round(EM[l.emp]*.5)+"M EUR (só referência)");
+ if(l.own==="Subsidiária")f.push("Subsidiária: confirme se tem orçamento próprio");
+ if(!loc)f.push("Sem localização");else if(g.out)f.push("Fora da Europa/EUA");else if(!g.known)f.push("Local não reconhecido: escreva o país ou uma cidade grande");
+ if(!l.cat)f.push("Sem categoria");if(!sigs.length)f.push("Sem gatilho: abordagem fria");else if(l.sigDate&&rec<=.2)f.push("Gatilho com mais de 24 meses");if(!l.ver)f.push("Porte não verificado");if(dq)f.push(dq+" desqualificador(es)");
+ const parts=[["Categoria",w.cat*fCat,w.cat],["Valor",w.val*fVal,w.val],["Decisor",w.name*fName,w.name],["Cargo",w.role*fRole,w.role],["Local",w.loc*fLoc,w.loc],["Empresa",w.co*fCo,w.co],["Gatilho",w.sig*fSig,w.sig],["Setor",w.sec*fSec,w.sec],["Funcionários",w.emp*fEmp,w.emp]];
+ const action=sigs.includes("ask")?"Lead quente: responda hoje e avise o Alex por WhatsApp":!name?"Achar o decisor antes de qualquer envio":cls==="Alto"?"Prioridade: verificar porte e enviar nota de conexão esta semana":cls==="Médio"?"Verificar porte e sinal antes de enviar":"Seguir a página e monitorar gatilhos; não enviar ainda";
+ const fn=name?name.split(/\s+/)[0]:"there",co=(l.company||"").trim()||"your company";
+ const sub=t=>t.replace(/\{FirstName\}/g,fn).replace(/\{Company\}/g,co);
+ const grp=catRow?catRow[1]:"Setor",ok=name&&cls!=="Baixo";
+ const pri=SIGS.filter(s=>sigs.includes(s[0])).sort((a,b)=>b[2]-a[2])[0];
+ const noun=NOUN[l.cat]||"manufacturers and distributors",hook=(l.hook||"").trim().slice(0,80),pers=((PERS.find(p=>p[1].test(role))||[])[2])||"";
+ const ms=sigs.some(s=>["bc","old","bi"].includes(s))||["Business Central","Dynamics 365","Dynamics NAV","Power BI","Fabric"].includes(l.cat);
+ const q0=pri?pri[3]:catRow?catRow[3]:DEF_Q,lc=t=>t[0].toLowerCase()+t.slice(1),alto=cls==="Alto";
+ const hasCo=q0.includes("{Company}"),pz=hasCo?pers:pers.replace(/, $/," at {Company}, "),q=pers?(alto?lc(pz):pz)+lc(q0):hasCo?q0:(alto?"at":"At")+" {Company}, "+lc(q0);
+ const n0=pri&&pri[4]?pri[4]:hook?"Hi {FirstName}, I read that "+hook+". I work with Mund-Tönjes on BI for "+noun+". Would be good to connect.":grp==="Setor"?"Hi {FirstName}, I work with Mund-Tönjes, a BI consultancy for "+noun+". Would be good to connect and swap notes on reporting at {Company}.":NOTES[grp];
+ let note=sub(name?n0:n0.replace("Hi {FirstName},","Hello,"));if(!n0.includes("{Company}")&&co!=="your company"){const add=" Curious how "+co+" approaches reporting.";if((note+add).length<=200)note+=add}
+ const msg=sub((name?"Thanks for connecting, {FirstName}. ":"Thanks for connecting. ")+(hook?"I read that "+hook+". ":"")+(alto?"For context, we build decision-ready reporting for mid-sized "+noun+", mostly on "+(ms?"Power BI and Dynamics 365 or Business Central":"Power BI and the Microsoft stack")+". One question, no pitch: ":"")+q);
+ if(note.length>200)f.push("Nota de conexão com "+note.length+" caracteres: encurte o gancho");
+ return{sc,P,cls,f,parts,action,note,msg};
+}
+const stage=l=>STAGE[STATUS.indexOf(l.status)]||0;
+const pct=x=>Math.round(x*100)+"%";
+const parseMoney=s=>{const t=String(s||"").replace(/\./g,"").replace(",",".");return t===""||isNaN(Number(t))?"":Number(t)};
+const fmtNum=n=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const money=(n,c)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:c||"EUR"}).format(n);
+const moneyC=(n,c)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:c||"EUR",notation:"compact",maximumFractionDigits:1}).format(n);
+function mask(e){const p=e.target.value.replace(/[^\d,]/g,"").split(","),i=p[0].replace(/^0+(?=\d)/,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");e.target.value=p.length>1?i+","+p.slice(1).join("").slice(0,2):i}
+const mig=()=>S.leads.forEach(l=>{if(!l.valAbs){const n=Number(l.value);l.value=l.value===""||l.value==null||isNaN(n)?"":n*1e6;l.valAbs=true}});
+
+/* persistence */
+let db=null,path=null,timer=null;
+function setSv(t){$("sv").textContent=t}
+function save(){setSv("Salvando...");clearTimeout(timer);timer=setTimeout(async()=>{const json=JSON.stringify(S);let ok=false;
+ try{if(db){await db.doc(path).set({json});ok=true}}catch(e){}
+ try{localStorage.setItem("mt-leads",json);ok=true}catch(e){}
+ setSv(ok?"Salvo":"Não foi possível salvar: faça um backup JSON")},500)}
+function load(j){try{const o=JSON.parse(j);if(o&&Array.isArray(o.leads)){S.leads=o.leads;const oc=o.cfg&&o.cfg.v===2?o.cfg:{};S.cfg={...defCfg(),...oc,w:{...defCfg().w,...oc.w},catF:{...defCfg().catF,...(oc.catF||{})}};return true}}catch(e){}return false}
+async function init(){
+ let got=false;
+ try{const u=await claude.use("user"),d=await claude.use("db");if(u&&d){const id=await u.id();if(id){db=d;path="data/users/"+id+"/crm";const s=await db.doc(path).get();if(s.exists)got=load(s.data().json)}}}catch(e){}
+ if(!got){try{const j=localStorage.getItem("mt-leads");if(j)load(j)}catch(e){}}
+ mig();renderAll();
+}
+
+/* UI */
+$("fCat").innerHTML='<option value="">Escolha...</option>'+CATS.map(c=>`<option>${esc(c[0])}</option>`).join("");
+$("fSig").innerHTML=SIGS.map(s=>`<label class="chk"><input type="checkbox" data-s="${s[0]}">${s[1]}</label>`).join("");
+$("fDq").innerHTML=DQ.map(d=>`<label class="chk"><input type="checkbox" data-d="${d[0]}">${d[1]}</label>`).join("");
+const hasData=l=>Object.entries(l).some(([k,x])=>k!=="valAbs"&&(Array.isArray(x)?x.length:x!==""&&x!==false));
+function formVal(){const ck=s=>[...document.querySelectorAll(s)].map(e=>e.dataset.s||e.dataset.d);return{cat:$("fCat").value,company:$("fCo").value,value:parseMoney($("fVal").value),valAbs:true,name:$("fName").value,role:$("fRole").value,loc:$("fLoc").value,sec:$("fSec").value,emp:$("fEmp").value,own:$("fOwn").value,bi:$("fBi").value,sigs:ck("#fSig input:checked"),sigDate:$("fSd").value,sigUrl:$("fSu").value,dqs:ck("#fDq input:checked"),ver:$("fVer").checked,li:$("fLi").value,cur:$("fCur").value,hook:$("fHook").value}}
+function fill(l){$("fCat").value=l.cat||"";$("fCo").value=l.company||"";$("fVal").value=l.value===""||l.value==null?"":fmtNum(l.value);$("fName").value=l.name||"";$("fRole").value=l.role||"";$("fLoc").value=l.loc||"";$("fSec").value=l.sec||"";$("fEmp").value=l.emp||"";$("fOwn").value=l.own||"";$("fBi").value=l.bi||"";$("fSd").value=l.sigDate||"";$("fSu").value=l.sigUrl||"";$("fLi").value=l.li||"";$("fVer").checked=!!l.ver;$("fCur").value=l.cur||"";$("fHook").value=l.hook||"";document.querySelectorAll("#fSig input").forEach(e=>e.checked=(l.sigs||[]).includes(e.dataset.s));document.querySelectorAll("#fDq input").forEach(e=>e.checked=(l.dqs||[]).includes(e.dataset.d));$("fTitle").textContent=l.id?"Editar lead":"Novo lead";$("bSave").textContent=l.id?"Atualizar lead":"Adicionar lead";liveCalc()}
+function liveCalc(){const l=formVal();$("vHint").textContent=l.value===""?"":money(l.value,l.cur)+" ≈ "+(l.value*(S.cfg.fx[l.cur]||1)/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1})+" milhões de EUR";if(!hasData(l)){$("live").innerHTML='<p class="mut">Preencha os campos para ver a probabilidade em tempo real.</p>';return}
+ const r=score(l);$("live").innerHTML=`<div class="pb"><i><b style="width:${r.P*100}%"></b></i><span>${pct(r.P)}</span></div><p style="margin:6px 0"><span class="tag ${r.cls}">${r.cls}</span> <span class="mut">nota ${r.sc}/100</span></p>${r.f.length?`<div class="warn">${r.f.map(esc).join("<br>")}</div>`:""}`}
+document.querySelectorAll("#p-leads .card input,#p-leads .card select").forEach(e=>e.addEventListener("input",liveCalc));
+$("bSave").onclick=()=>{const l=formVal();if(!hasData(l))return;
+ const old=edit&&S.leads.find(x=>x.id===edit);if(!old&&(l.company||"").trim()&&S.leads.some(x=>(x.company||"").trim().toLowerCase()===l.company.trim().toLowerCase())&&!confirm("Já existe um lead com esse nome. Adicionar mesmo assim?"))return;let id;if(old){Object.assign(old,l);id=old.id}else{id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);S.leads.push({id,created:Date.now(),status:"Não contatado",date:"",...l})}
+ sel=id;edit=null;fill({});save();renderAll();$("fCat").focus()};
+$("bClr").onclick=()=>{edit=null;sel=null;fill({});renderAll()};
+function renderRows(){const m=$("sortBy").value,rs=S.leads.map((l,i)=>({l,r:score(l),n:i+1}));rs.sort(m==="p"?(a,b)=>b.r.P-a.r.P:m==="new"?(a,b)=>b.n-a.n:m==="co"?(a,b)=>(a.l.company||"").localeCompare(b.l.company||""):(a,b)=>a.n-b.n);
+ $("rows").innerHTML=rs.length?rs.map(({l,r,n})=>`<tr class="lead ${l.id===sel?"sel":""}" data-id="${l.id}"><td class="mut">${n}</td><td><div class="pb"><i><b style="width:${r.P*100}%"></b></i><span>${pct(r.P)}</span></div></td><td><span class="tag ${r.cls}">${r.cls}</span></td><td>${esc(l.company)||'<span class="mut">sem nome</span>'}</td><td>${esc(l.cat)}</td><td>${l.value===""||l.value==null?"":esc(moneyC(l.value,l.cur))}</td><td>${esc(l.name)||'<span class="warn">sem decisor</span>'}</td><td>${esc(l.role)}</td><td>${esc(l.loc)}</td><td><select data-st="${l.id}">${STATUS.map(s=>`<option${s===l.status?" selected":""}>${s}</option>`).join("")}</select></td><td><button class="btn sm" data-del="${l.id}" aria-label="Apagar lead">Apagar</button></td></tr>`).join(""):`<tr><td colspan="11" class="empty">Nenhum lead ainda. Preencha o formulário ao lado e clique em Salvar lead.</td></tr>`}
+$("rows").onclick=e=>{const d=e.target.closest("[data-del]");if(d){if(confirm("Apagar este lead?")){S.leads=S.leads.filter(x=>x.id!==d.dataset.del);if(sel===d.dataset.del){sel=null}if(edit===d.dataset.del){edit=null;fill({})}save();renderAll()}return}
+ if(e.target.closest("select"))return;const tr=e.target.closest("tr.lead");if(tr){sel=edit=tr.dataset.id;fill(S.leads.find(x=>x.id===sel));renderAll()}};
+$("rows").onchange=e=>{const id=e.target.dataset.st;if(id){S.leads.find(x=>x.id===id).status=e.target.value;save();renderAll()}};
+function copy(t,b){try{navigator.clipboard.writeText(t).then(()=>{b.textContent="Copiado"})}catch(e){b.textContent="Selecione e copie"}}
+function renderDetail(){const l=S.leads.find(x=>x.id===sel),d=$("detail");if(!l){d.hidden=true;return}d.hidden=false;const r=score(l);
+ d.innerHTML=`<h2>${esc(l.company)||"Lead"}: ${pct(r.P)} · ${r.cls} · nota ${r.sc}</h2><p style="margin:0 0 4px"><b>${esc(r.action)}</b></p>${(l.li&&/^https?:/.test(l.li))||l.sigUrl?`<p class="mut" style="margin:0 0 4px">${l.li&&/^https?:/.test(l.li)?`<a href="${esc(l.li)}" target="_blank" rel="noopener">LinkedIn do decisor</a> `:""}${l.sigUrl?"Fonte do gatilho: "+esc(l.sigUrl):""}</p>`:""}${r.f.length?`<div class="warn">${r.f.map(esc).join(" · ")}</div>`:""}
+ <div class="parts">${r.parts.map(p=>`<div>${p[0]}<b>${p[1].toFixed(1)}</b><span class="mut">de ${p[2]}</span></div>`).join("")}</div>
+ ${r.note?`<label>Nota de conexão (${r.note.length} caracteres, máx. 200)</label><textarea readonly rows="2">${esc(r.note)}</textarea><button class="btn sm" data-cp="note">Copiar</button>
+ <label>Mensagem 1, após aceite</label><textarea readonly rows="4">${esc(r.msg)}</textarea><button class="btn sm" data-cp="msg">Copiar</button>`:`<p class="mut">Nenhuma mensagem gerada: ${!(l.name||"").trim()?"falta o nome do decisor.":"classe Baixo."}</p>`}
+ <label>Observações</label><textarea id="obs">${esc(l.notes||"")}</textarea><p class="mut" style="font-size:12px">Rascunhos: o Alex revisa antes de enviar. Sem preço, prazo ou promessa de resultado.</p>`;
+ d.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>copy(r[b.dataset.cp],b));
+ $("obs").oninput=e=>{l.notes=e.target.value;save()}}
+function renderLearn(){const funnel=(k,fn)=>{const a=S.leads.filter(fn),sent=a.filter(l=>stage(l)>=1).length,acc=a.filter(l=>stage(l)>=2).length,rep=a.filter(l=>stage(l)>=3).length,mt=a.filter(l=>stage(l)>=4).length,rate=(n)=>sent?pct(n/sent):"-",pm=a.length?pct(a.reduce((s,l)=>s+score(l).P,0)/a.length):"-";
+  return`<tr><td>${esc(k)}</td><td>${a.length}</td><td>${sent}</td><td>${acc}</td><td>${rep}</td><td>${mt}</td><td>${rate(acc)}</td><td>${rate(rep)}</td><td>${rate(mt)}</td><td>${pm}</td></tr>`};
+ const head="<thead><tr><th>Grupo</th><th>Leads</th><th>Enviados</th><th>Aceites</th><th>Respostas</th><th>Reuniões</th><th>% aceite</th><th>% resposta</th><th>% reunião</th><th>Prob. média</th></tr></thead>";
+ const used=CATS.map(c=>c[0]).filter(k=>S.leads.some(l=>l.cat===k));
+ $("p-learn").innerHTML=`<div class="card"><h2>Por classe: o teste de calibração</h2><p class="mut">Se Alto não gerar mais respostas e reuniões que Baixo, os pesos estão errados. Taxas com menos de ~30 enviados por linha são ruído.</p><div class="tw"><table>${head}<tbody>${["Alto","Médio","Baixo"].map(k=>funnel(k,l=>score(l).cls===k)).join("")}</tbody></table></div></div>
+ <div class="card" style="margin-top:14px"><h2>Por categoria buscada</h2>${used.length?`<div class="tw"><table>${head}<tbody>${used.map(k=>funnel(k,l=>l.cat===k)).join("")}</tbody></table></div>`:'<div class="empty">Cadastre leads e atualize o status para ver o que funciona.</div>'}</div><div class="card" style="margin-top:14px"><h2>Por tipo de gatilho</h2><div class="tw"><table>${head}<tbody>${SIGS.map(s=>funnel(s[1],l=>(l.sigs||[]).includes(s[0]))).join("")}</tbody></table></div></div>`}
+function renderCfg(){const c=S.cfg,sum=Object.values(c.w).reduce((a,b)=>a+Number(b),0);
+ const num=(k,l,o)=>`<div><label>${l}</label><input type="number" step="any" data-k="${k}" value="${o}"></div>`;
+ $("p-cfg").innerHTML=`<div class="card"><h2>Pesos (soma ${sum}${sum===100?"":" — deveria ser 100"})</h2><div class="cfg">${Object.keys(c.w).map(k=>num("w."+k,WLAB[k],c.w[k])).join("")}</div>
+ <h2 style="margin-top:16px">Regras</h2><div class="cfg">${num("nameBlank","Decisor em branco: fator (preenchido = 1)",c.nameBlank)}${num("noName","Sem decisor: multiplicador da nota",c.noName)}${num("dqMult","Cada desqualificador: multiplicador",c.dqMult)}${["USD","GBP","BRL"].map(m=>num("fx."+m,"1 "+m+" em EUR (atualize)",c.fx[m])).join("")}${num("valConf","Valor não verificado: fator de confiança",c.valConf)}${num("smallBelow","Porte abaixo de (milhões)",c.smallBelow)}${num("smallMult","Penalidade de porte (multiplicador)",c.smallMult)}${num("geoMult","Penalidade fora da Europa/EUA (multiplicador)",c.geoMult)}${num("mid","Curva: nota que equivale a 50%",c.mid)}${num("slope","Curva: inclinação",c.slope)}${num("hi","Classe Alto: nota mínima",c.hi)}${num("med","Classe Médio: nota mínima",c.med)}</div>
+ <p class="mut">Valor: abaixo de 2M ≈ 0,05 · 2 a 10M 0,2 · 10 a 15M 0,5 · 15 a 20M 0,7 · 20 a 100M 1,0 · 100 a 250M 0,6 · acima de 250M 0,3. Cargo: CEO/Chief/Founder/Owner 1,0 · Head/Director/VP 0,9 · Controller 0,7 · Manager 0,5 · Analyst/Assistant etc. 0,15. Local: UK, Bélgica, Holanda, Alemanha, França e EUA (qualquer estado ou cidade grande) 1,0 · demais países europeus 0,85 · fora da Europa/EUA recebe penalidade. Gatilhos somam pontos (pedido público de parceiro 0,8; go-live de D365/BC 0,6; multi-entidade 0,35; demais 0,25 a 0,3), com teto de 1 e redução se o gatilho for antigo.</p></div>
+ <div class="card" style="margin-top:14px"><h2>Fator de match por categoria</h2><div class="cfg">${CATS.map(x=>num("catF."+x[0],x[0]+" ("+x[1]+")",c.catF[x[0]])).join("")}</div>
+ <div class="row"><button class="btn" id="bRst">Restaurar padrões</button></div></div>`;
+ $("p-cfg").oninput=e=>{const k=e.target.dataset.k;if(!k)return;const v=Number(e.target.value);if(isNaN(v))return;if(k.startsWith("w."))c.w[k.slice(2)]=v;else if(k.startsWith("catF."))c.catF[k.slice(5)]=v;else if(k.startsWith("fx."))c.fx[k.slice(3)]=v;else c[k]=v;save();renderLeadsOnly()};
+ $("bRst").onclick=()=>{if(confirm("Restaurar todos os pesos e regras padrão?")){S.cfg=defCfg();save();renderAll()}}}
+function renderLeadsOnly(){renderRows();renderDetail();liveCalc();stats()}
+function stats(){const n=S.leads.length,a=S.leads.filter(l=>score(l).cls==="Alto").length;$("stat").textContent=`${n} leads · ${a} de alto potencial`}
+function renderAll(){renderLeadsOnly();if(tab==="learn")renderLearn();if(tab==="cfg")renderCfg()}
+$("tabs").onclick=e=>{const t=e.target.dataset.t;if(!t)return;tab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));["leads","learn","cfg"].forEach(x=>$("p-"+x).hidden=x!==t);renderAll()};
+
+/* export / import */
+function csvRows(t){const r=[];let row=[],c="",q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}else if(ch=='"')q=true;else if(ch==","){row.push(c);c=""}else if(ch=="\n"||ch=="\r"){if(ch=="\r"&&t[i+1]=="\n")i++;row.push(c);r.push(row);row=[];c=""}else c+=ch}if(c||row.length){row.push(c);r.push(row)}return r.filter(x=>x.some(v=>v.trim()))}
+async function dl(name,data){try{const d=await claude.use("downloads");if(d){await d.save({filename:name,data});return}}catch(e){if(e&&e.code==="declined")return}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data]));a.download=name;a.click()}
+$("bJson").onclick=()=>dl("lead-scoring-backup.json",JSON.stringify(S,null,1));
+$("bCsv").onclick=()=>{const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"',h=["Categoria","Empresa","Valor (M)","Decisor","Cargo","Localização","Probabilidade","Classe","Nota","Status","Observações","Gatilhos","Fonte do gatilho","LinkedIn","Cadastrado em","Setor","Funcionários","Propriedade","Time de BI","Moeda","Gancho","Valor verificado"];
+ dl("leads.csv",[h.map(q).join(",")].concat(S.leads.map(l=>{const r=score(l);return[l.cat,l.company,l.value===""||l.value==null?"":l.value/1e6,l.name,l.role,l.loc,pct(r.P),r.cls,r.sc,l.status,l.notes,(l.sigs||[]).join("; "),l.sigUrl,l.li,l.created?new Date(l.created).toLocaleDateString("pt-BR"):"",l.sec,l.emp,l.own,l.bi,l.cur,l.hook,l.ver?"sim":""].map(q).join(",")})).join("\n"))};
+$("bImp").onclick=()=>$("fImp").click();
+$("fImp").onchange=async e=>{const f=e.target.files[0];if(!f)return;const t=await f.text();let n=-1;
+ try{if(/\.csv$/i.test(f.name)){const R=csvRows(t),h=R[0].map(x=>x.trim().toLowerCase()),K={"categoria":"cat","empresa":"company","valor (m)":"value","decisor":"name","cargo":"role","localização":"loc","status":"status","observações":"notes","setor":"sec","funcionários":"emp","propriedade":"own","time de bi":"bi","gatilhos":"sigs","data do gatilho":"sigDate","fonte do gatilho":"sigUrl","linkedin":"li","moeda":"cur","gancho":"hook","valor verificado":"ver"},cur=new Set(S.leads.map(l=>l.company+"|"+l.name));n=0;R.slice(1).forEach(r=>{const o={};h.forEach((k,i)=>{if(K[k])o[K[k]]=(r[i]||"").trim()});if(!Object.values(o).some(Boolean)||cur.has((o.company||"")+"|"+(o.name||"")))return;if(o.sigs)o.sigs=o.sigs.split(/[;,]/).map(x=>x.trim()).filter(x=>SIGS.some(s=>s[0]===x));if("ver" in o)o.ver=/^(sim|yes|true|1)$/i.test(o.ver);if(!STATUS.includes(o.status))o.status="Não contatado";S.leads.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:Date.now(),date:"",...o});n++})}
+ else{const o=JSON.parse(t);if(!Array.isArray(o.leads))throw 0;const had=S.leads.length,ids=new Set(S.leads.map(l=>l.id));n=0;o.leads.forEach(l=>{if(!ids.has(l.id)){S.leads.push(l);n++}});if(!had&&o.cfg&&o.cfg.v===2)S.cfg={...defCfg(),...o.cfg,w:{...defCfg().w,...o.cfg.w},catF:{...defCfg().catF,...(o.cfg.catF||{})}}}}catch(x){n=-1}
+ if(n<0)alert("Arquivo inválido: use o CSV ou o backup JSON exportado por esta ferramenta.");else{mig();edit=null;sel=null;fill({});save();renderAll();alert(n+" lead(s) adicionados (duplicados ignorados).")}e.target.value=""};
+let smp=null,tri=[];
+async function initTri(){try{const s=await claude.use("sample"),c=s&&s.limits&&s.limits();if(s&&c&&c.images){smp=s;$("tri").hidden=false}}catch(e){}}
+const TP=kw=>"This is a screenshot of a LinkedIn company search"+(kw?" for the keyword '"+kw+"'":"")+". List every company visible. Return only a JSON array. Each item has the keys name, label (the industry label as shown), loc (the location as shown, or an empty string), followers (a number or null), verdict (candidate or out) and reason (at most 12 words). Target profile: private manufacturers or distributors (wholesale, FMCG, food and beverage, chemicals, building materials, industrial equipment, packaging, print) in Europe or the US, about 20M revenue or more. Mark out for staffing and recruiting, real estate, financial services, media and publishers, software, consultancies, government, education and associations. Judge only from what is visible. Never guess size, revenue or employees.";
+function drawTri(){$("tOut").innerHTML=tri.length?`<div class="tw"><table style="min-width:600px"><thead><tr><th></th><th>Empresa</th><th>Setor no LinkedIn</th><th>Local</th><th>Triagem</th></tr></thead><tbody>${tri.map((t,i)=>`<tr><td><input type="checkbox" data-i="${i}" checked style="width:auto"></td><td>${esc(t.name)}</td><td>${esc(t.label)}</td><td>${esc(t.loc)}</td><td><span class="tag ${t.verdict==="candidate"?"Alto":"Baixo"}">${t.verdict==="candidate"?"Candidata":"Fora do ICP"}</span> <span class="mut">${esc(t.reason)}</span></td></tr>`).join("")}</tbody></table></div><div class="row"><button class="btn pri" id="tAdd">Adicionar ao histórico</button><span class="mut" style="align-self:center">Fora do ICP entra como Descartado, para o histórico.</span></div>`:'<p class="warn">Nenhuma empresa encontrada no print.</p>';
+ const b=$("tAdd");if(b)b.onclick=()=>{const kw=$("tKw").value.trim(),cat=(CATS.find(c=>c[0].toLowerCase()===kw.toLowerCase())||[""])[0],have=new Set(S.leads.map(l=>(l.company||"").toLowerCase()));let n=0;document.querySelectorAll("#tOut input:checked").forEach(e=>{const t=tri[e.dataset.i];if(!t||!t.name||have.has(t.name.toLowerCase()))return;S.leads.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:Date.now(),date:"",cat,company:t.name,loc:t.loc||"",value:"",name:"",role:"",status:t.verdict==="candidate"?"Não contatado":"Descartado",notes:"Triagem por print"+(kw?" ("+kw+")":"")+": "+t.reason+(t.followers?"; "+t.followers+" seguidores":"")});n++});save();renderAll();$("tOut").innerHTML='<p class="mut">'+n+" empresa(s) adicionada(s). Complete porte, decisor e gatilhos clicando na linha.</p>"}}
+$("tGo").onclick=async()=>{const f=$("tFile").files[0];if(!f||!smp)return;$("tGo").disabled=true;$("tOut").innerHTML='<p class="mut">Lendo o print...</p>';
+ try{const r=await smp.json(TP($("tKw").value.trim()),{images:f});tri=Array.isArray(r)?r:[];drawTri()}catch(e){$("tOut").innerHTML='<p class="warn">'+(e.code==="not_granted"?"Autorize o uso do Claude para ler o print.":"Não consegui ler o print ("+esc(e.code||"erro")+"). Tente um print mais nítido.")+"</p>"}finally{$("tGo").disabled=false}};
+fill({});init();initTri();
+</script>
+</body>
+</html>
